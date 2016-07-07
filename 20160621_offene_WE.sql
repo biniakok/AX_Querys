@@ -56,6 +56,6 @@ SELECT
 on (cte4.origpurchid=cte1.PO and cte4.itemid=cte1.ean)
 ) as cte5
 where cte5.Differenz>0
-and cte5.PO<>'Best-1109224'
+and cte5.PO not in ('Best-1109224','BEST-1108835')
 
 
