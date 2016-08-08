@@ -1,21 +1,33 @@
 select 
-cte2."Item No_"
-,cte2.AnzahlVerarbeitet
+--cte3.journalid
+cte3."Item No_"
+,sum(cte3.AnzahlVerarbeitet) as AnzahlVerarbeitet
+,cte3."Return Reason Code"
+,cte3.Warenwert
+from (
+select 
+cte2.journalid
+,cte2.inventtransid
+,cte2."Item No_"
+,cast(cte2.AnzahlVerarbeitet as integer) as AnzahlVerarbeitet
 ,cte2."Return Reason Code"
-,replace(cte2.Warenwert,'.',',') as Warenwert from ( 
+,replace(cte2.Betrag,'.',',') as Warenwert from ( 
 select 
 cte1.journalid
+,cte1.inventtransid
 ,cte1.itemid as "Item No_"
 ,cte1.menge as AnzahlVerarbeitet
 ,cte1.reasoncode as "Return Reason Code"
-, case when cte1.reasoncode in ('K12', 'K13', 'K14', 'K17')then (-1*cast(cte1.menge as integer)*cast(round(cte1.Betrag,2) as float))
-else (cast(cte1.menge as integer)*cast(round(cte1.Betrag,2) as float))end Warenwert
+,cte1.Betrag
+--, case when cte1.reasoncode in ('K12', 'K13', 'K14', 'K17')then (-1*cast(cte1.menge as --integer)*cast(round(cte1.Betrag,2) as float))
+--else (cast(cte1.menge as integer)*cast(round(cte1.Betrag,2) as float))end Warenwert
 
 from (
 select 
 cte.TransDatum
 ,cte.journalid
 ,cte.itemid
+,cte.inventtransid
 ,cte.menge
 ,cte.reasoncode
 ,fiege.amount as amount_fiege
@@ -28,12 +40,9 @@ cast(it.transdate as date) as TransDatum
 ,it.journalid
 ,it.linenum
 ,it.itemid
---,replace(cast(price.amount as float),'.',',') as WW_Einheit
---,case  when corr.reasoncode in ('K12', 'K13', 'K14', 'K17') then (-1*(cast(price.amount as float)*abs(it.qty))) else (cast(price.amount as float)*abs(it.qty)) end Warenwert
---,replace(it.inventonhand,'.',',') as auf_Lager
---,replace(it.counted,'.',',') as gezählt
 ,replace(cast(abs(it.qty)as integer),'.',',') as menge
 ,it.inventdimid
+,it.inventtransid
 ,id.inventlocationid
 ,corr.reasoncode
 --,corr.description
@@ -43,8 +52,8 @@ cast(it.transdate as date) as TransDatum
  on it.inventdimid=id.inventdimid
  left join "AX.PROD_DynamicsAX2012.dbo.WININVCORREASON" corr
  on corr.recid=it.WININVCORREASON
- where cast(it.transdate as date)>='2016-05-01'
- and cast(it.transdate as date)<='2016-05-31'
+ where cast(it.transdate as date)>='2016-06-01'
+ and cast(it.transdate as date)<='2016-06-30'
  and id.inventlocationid='FIEGE_GB'
 ) as cte
 left join (
@@ -81,5 +90,26 @@ and pt.unitid='PCS'
 on abe.itemrelation=cte.itemid
 ) as cte1
 ) as cte2
---order by linenum
+where cte2."Return Reason Code" in ('K02','K03')
+group by
+cte2.journalid
+,cte2.inventtransid
+,cte2."Item No_"
+,cte2.AnzahlVerarbeitet
+,cte2."Return Reason Code"
+,replace(cte2.Betrag,'.',',')
+) as cte3
+group by
+--cte3.journalid
+cte3."Item No_"
+,cte3."Return Reason Code"
+,cte3.Warenwert
+
+
+
+
+
+
+
+
 
